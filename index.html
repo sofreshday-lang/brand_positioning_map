@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>K 키즈 패션 브랜드 포지셔닝맵 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -91,28 +91,8 @@
     border:1px solid var(--rule);
     width:100%;
     padding-bottom:66%;
-    overflow:hidden;   /* clip zoomed content */
-    touch-action:none; /* 차트 내부 터치는 JS가 처리 */
+    overflow:visible;
   }
-  /* 핀치줌 대상 래퍼 — 모든 차트 자식을 감쌈 */
-  .chart-zoom {
-    position:absolute; inset:0;
-    transform-origin:0 0;
-    will-change:transform;
-  }
-  /* 줌 리셋 버튼 */
-  .zoom-reset {
-    display:none;
-    position:absolute; top:8px; right:8px;
-    z-index:500;
-    background:rgba(196,136,74,0.88);
-    color:#fff; border:none; border-radius:20px;
-    padding:4px 10px; font-size:10px; font-weight:700;
-    letter-spacing:0.05em; cursor:pointer;
-    box-shadow:0 2px 8px rgba(0,0,0,0.18);
-    font-family:'Noto Sans KR',sans-serif;
-  }
-  .zoom-reset.visible { display:block; }
 
   /* X ticks */
   .x-ticks {
@@ -325,10 +305,9 @@
     .tip { display:none !important; }
   }
 
-  @media (min-width:601px) {
-    .chart { overflow:visible; touch-action:auto; }
-    .zoom-reset { display:none !important; }
-  }
+  /* ══════════════════════════════════════
+     TABLET  (601px – 900px)
+  ══════════════════════════════════════ */
   @media (min-width:601px) and (max-width:900px) {
     .page { padding:32px 24px 48px; }
     h1 { font-size:28px; }
@@ -366,8 +345,6 @@
     </div>
 
     <div class="chart" id="chart">
-      <button class="zoom-reset" id="zoomReset">↺ 리셋</button>
-      <div class="chart-zoom" id="chartZoom">
       <div class="qs qs-TL"></div><div class="qs qs-TR"></div>
       <div class="qs qs-BL"></div><div class="qs qs-BR"></div>
       <div class="q-h"></div><div class="q-v"></div>
@@ -375,7 +352,6 @@
       <div class="ql ql-TR">프리미엄<br>키즈</div>
       <div class="ql ql-BL">가성비<br>베이비</div>
       <div class="ql ql-BR">가성비<br>키즈</div>
-      </div><!-- end chart-zoom -->
     </div>
 
     <div class="x-ticks">
@@ -602,14 +578,12 @@ function tipHTML(b) {
 }
 
 /* ── 버블 주입 ── */
-const chart     = document.getElementById('chart');
-const chartZoom = document.getElementById('chartZoom');
-const tip       = document.getElementById('tip');
-const overlay   = document.getElementById('overlay');
-const sheet     = document.getElementById('sheet');
-const sheetBody = document.getElementById('sheetBody');
-const sheetClose= document.getElementById('sheetClose');
-const zoomReset = document.getElementById('zoomReset');
+const chart    = document.getElementById('chart');
+const tip      = document.getElementById('tip');
+const overlay  = document.getElementById('overlay');
+const sheet    = document.getElementById('sheet');
+const sheetBody= document.getElementById('sheetBody');
+const sheetClose = document.getElementById('sheetClose');
 
 const isMobile = () => window.innerWidth <= 600;
 
@@ -633,160 +607,29 @@ brands.forEach(b => {
     tip.style.display = 'block';
     moveTip(e);
   });
-  el.addEventListener('mousemove', e => { if (!isMobile()) moveTip(e); });
-  el.addEventListener('mouseleave', () => { if (!isMobile()) tip.style.display = 'none'; });
+  el.addEventListener('mousemove', e => {
+    if (!isMobile()) moveTip(e);
+  });
+  el.addEventListener('mouseleave', () => {
+    if (!isMobile()) tip.style.display = 'none';
+  });
 
   /* Mobile: tap → bottom sheet */
   el.addEventListener('touchstart', e => {
-    e.stopPropagation(); // 차트 핀치줌 이벤트와 분리
-    // 멀티터치(핀치)일 경우 무시
-    if (e.touches.length > 1) return;
-    tapTimer = setTimeout(() => openSheet(b, el), 120);
-  }, { passive: true });
+    e.preventDefault();
+    e.stopPropagation();
+    openSheet(b, el);
+  }, { passive: false });
 
-  el.addEventListener('touchend', e => {
-    if (e.touches.length > 0) clearTimeout(tapTimer);
-  }, { passive: true });
-
+  /* Also support click for mobile browsers that don't fire touchstart well */
   el.addEventListener('click', e => {
     if (!isMobile()) return;
     e.stopPropagation();
     openSheet(b, el);
   });
 
-  chartZoom.appendChild(el);
+  chart.appendChild(el);
 });
-
-/* ════════════════════════════════════
-   핀치줌 + 패닝 (모바일 전용)
-════════════════════════════════════ */
-let scale    = 1;
-let originX  = 0;   // 현재 translate X
-let originY  = 0;   // 현재 translate Y
-let startDist= 0;
-let startScale=1;
-let startX   = 0;
-let startY   = 0;
-let startOX  = 0;
-let startOY  = 0;
-let isPinching = false;
-let tapTimer   = null;
-
-const MIN_SCALE = 1;
-const MAX_SCALE = 4;
-
-function getDist(t) {
-  const dx = t[0].clientX - t[1].clientX;
-  const dy = t[0].clientY - t[1].clientY;
-  return Math.sqrt(dx*dx + dy*dy);
-}
-function getMidpoint(t) {
-  return {
-    x: (t[0].clientX + t[1].clientX) / 2,
-    y: (t[0].clientY + t[1].clientY) / 2,
-  };
-}
-function applyTransform() {
-  chartZoom.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
-  // 리셋 버튼 표시
-  if (scale > 1.05) {
-    zoomReset.classList.add('visible');
-  } else {
-    zoomReset.classList.remove('visible');
-  }
-}
-function clampTranslate(x, y, s) {
-  const rect   = chart.getBoundingClientRect();
-  const w = rect.width;
-  const h = rect.height;
-  const maxX =  0;
-  const minX = -(s - 1) * w;
-  const maxY =  0;
-  const minY = -(s - 1) * h;
-  return {
-    x: Math.min(maxX, Math.max(minX, x)),
-    y: Math.min(maxY, Math.max(minY, y)),
-  };
-}
-
-chart.addEventListener('touchstart', e => {
-  if (!isMobile()) return;
-  clearTimeout(tapTimer);
-
-  if (e.touches.length === 2) {
-    isPinching = true;
-    startDist  = getDist(e.touches);
-    startScale = scale;
-    const mid  = getMidpoint(e.touches);
-    const rect = chart.getBoundingClientRect();
-    // 핀치 중심점을 차트 기준 좌표로
-    startX = mid.x - rect.left;
-    startY = mid.y - rect.top;
-    startOX = originX;
-    startOY = originY;
-  } else if (e.touches.length === 1 && scale > 1.05) {
-    // 줌 상태에서 한 손가락 패닝
-    isPinching = false;
-    startX  = e.touches[0].clientX;
-    startY  = e.touches[0].clientY;
-    startOX = originX;
-    startOY = originY;
-  }
-}, { passive: true });
-
-chart.addEventListener('touchmove', e => {
-  if (!isMobile()) return;
-
-  if (e.touches.length === 2 && isPinching) {
-    e.preventDefault();
-    const newDist = getDist(e.touches);
-    let   newScale = startScale * (newDist / startDist);
-    newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
-
-    // 핀치 중심점 기준으로 translate 조정
-    const ratio = newScale / startScale;
-    let newX = startX - ratio * (startX - startOX);
-    let newY = startY - ratio * (startY - startOY);
-    const clamped = clampTranslate(newX, newY, newScale);
-    scale   = newScale;
-    originX = clamped.x;
-    originY = clamped.y;
-    applyTransform();
-
-  } else if (e.touches.length === 1 && !isPinching && scale > 1.05) {
-    e.preventDefault();
-    const dx = e.touches[0].clientX - startX;
-    const dy = e.touches[0].clientY - startY;
-    const clamped = clampTranslate(startOX + dx, startOY + dy, scale);
-    originX = clamped.x;
-    originY = clamped.y;
-    applyTransform();
-  }
-}, { passive: false });
-
-chart.addEventListener('touchend', e => {
-  if (!isMobile()) return;
-  if (e.touches.length < 2) isPinching = false;
-  // 스케일이 최소 이하면 리셋
-  if (scale < 1.05) resetZoom();
-}, { passive: true });
-
-/* 더블탭으로 리셋 */
-let lastTap = 0;
-chart.addEventListener('touchend', e => {
-  if (!isMobile() || e.touches.length > 0) return;
-  const now = Date.now();
-  if (now - lastTap < 300) resetZoom();
-  lastTap = now;
-}, { passive: true });
-
-function resetZoom() {
-  scale = 1; originX = 0; originY = 0;
-  chartZoom.style.transition = 'transform 0.3s ease';
-  applyTransform();
-  setTimeout(() => { chartZoom.style.transition = ''; }, 320);
-}
-zoomReset.addEventListener('click', resetZoom);
 
 /* ── Bottom sheet controls ── */
 function openSheet(b, activeEl) {
