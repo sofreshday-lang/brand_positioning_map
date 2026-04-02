@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K 키즈 패션 브랜드 포지셔닝맵 2025</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K 키즈 패션 브랜드 포지셔닝맵 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -15,12 +15,13 @@
     --rule: rgba(100,85,60,0.18);
     --quad-bg: rgba(255,252,245,0.82);
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body {
     background: var(--bg);
     font-family: 'Noto Sans KR', sans-serif;
     color: var(--ink);
     min-height: 100vh;
+    overflow-x: hidden;
   }
   body::before {
     content:'';
@@ -34,7 +35,7 @@
     padding:44px 44px 56px;
   }
 
-  /* HEADER */
+  /* ── HEADER ── */
   .header { text-align:center; margin-bottom:36px; }
   .eyebrow { font-size:10.5px; font-weight:700; letter-spacing:0.3em;
     text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
@@ -43,8 +44,9 @@
   h1 em { font-style:italic; color:var(--accent); }
   .sub { font-size:12.5px; color:var(--ink3); font-weight:300; letter-spacing:0.04em; }
   .rule-line { width:52px; height:1px; background:var(--accent); margin:16px auto 0; opacity:0.55; }
+  .mobile-hint { display:none; }
 
-  /* LAYOUT */
+  /* ── MAP LAYOUT ── */
   .map-outer {
     display:grid;
     grid-template-columns: 52px 1fr 52px;
@@ -52,7 +54,7 @@
     gap:0;
   }
 
-  /* Y-axis left label */
+  /* Y-axis left */
   .y-axis-left {
     grid-column:1; grid-row:2;
     display:flex; flex-direction:column;
@@ -92,7 +94,7 @@
     overflow:visible;
   }
 
-  /* X ticks bottom */
+  /* X ticks */
   .x-ticks {
     grid-column:2; grid-row:3;
     display:flex; justify-content:space-between;
@@ -108,19 +110,17 @@
     font-size:9px; color:var(--ink3); font-weight:300;
   }
 
-  /* Quadrant elements */
+  /* Quadrant */
   .q-h, .q-v { position:absolute; pointer-events:none; }
   .q-h { left:0; right:0; top:50%; height:0;
     border-top:1.5px dashed rgba(100,85,60,0.2); }
   .q-v { top:0; bottom:0; left:50%; width:0;
     border-left:1.5px dashed rgba(100,85,60,0.2); }
-
   .qs { position:absolute; width:50%; height:50%; pointer-events:none; }
   .qs-TL { top:0; left:0;  background:rgba(100,160,100,0.04); }
   .qs-TR { top:0; right:0; background:rgba(80,100,180,0.05); }
   .qs-BL { bottom:0; left:0; background:rgba(220,190,120,0.05); }
   .qs-BR { bottom:0; right:0; background:rgba(190,100,140,0.05); }
-
   .ql {
     position:absolute; pointer-events:none;
     font-size:10px; font-weight:700; letter-spacing:0.13em;
@@ -132,7 +132,7 @@
   .ql-BL { bottom:14px; left:16px; }
   .ql-BR { bottom:14px; right:16px; text-align:right; }
 
-  /* BUBBLES */
+  /* ── BUBBLES ── */
   .bubble {
     position:absolute; border-radius:50%;
     display:flex; flex-direction:column;
@@ -142,8 +142,9 @@
     box-shadow:0 3px 16px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.08);
     transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
     z-index:10;
+    -webkit-user-select:none; user-select:none;
   }
-  .bubble:hover {
+  .bubble:hover, .bubble.active {
     transform:translate(-50%,-50%) scale(1.18) !important;
     z-index:999 !important;
     box-shadow:0 14px 44px rgba(0,0,0,0.22);
@@ -152,7 +153,7 @@
     text-shadow:0 1px 3px rgba(0,0,0,0.32); padding:0 3px; white-space:nowrap; }
   .b-ko   { font-size:7px; color:rgba(255,255,255,0.82); margin-top:1px; white-space:nowrap; }
 
-  /* TOOLTIP */
+  /* ── DESKTOP TOOLTIP (hover) ── */
   .tip {
     position:fixed; display:none;
     background:#fffdf8; border:1px solid rgba(100,85,60,0.18);
@@ -163,9 +164,50 @@
     animation:fadeUp 0.14s ease;
   }
   @keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
-  .tip-hd { display:flex; align-items:center; gap:10px;
+
+  /* ── MOBILE BOTTOM SHEET ── */
+  .sheet-overlay {
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.36);
+    z-index:8000;
+    animation:fadeOverlay 0.2s ease;
+  }
+  @keyframes fadeOverlay { from{opacity:0} to{opacity:1} }
+  .sheet {
+    position:fixed; left:0; right:0; bottom:0;
+    background:#fffdf8;
+    border-radius:18px 18px 0 0;
+    padding:0 0 env(safe-area-inset-bottom,12px);
+    z-index:8001;
+    max-height:82vh;
+    overflow-y:auto;
+    transform:translateY(100%);
+    transition:transform 0.28s cubic-bezier(0.32,0.72,0,1);
+    box-shadow:0 -8px 40px rgba(0,0,0,0.18);
+  }
+  .sheet.open { transform:translateY(0); }
+  .sheet-handle {
+    width:36px; height:4px; border-radius:2px;
+    background:rgba(100,85,60,0.2);
+    margin:12px auto 0;
+  }
+  .sheet-body { padding:16px 20px 20px; }
+  .sheet-close {
+    position:absolute; top:14px; right:18px;
+    width:28px; height:28px; border-radius:50%;
+    background:rgba(100,85,60,0.1);
+    border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; color:var(--ink3);
+  }
+
+  /* Shared tooltip/sheet inner styles */
+  .tip-hd, .sheet .tip-hd {
+    display:flex; align-items:center; gap:10px;
     padding-bottom:11px; margin-bottom:12px;
-    border-bottom:1px solid rgba(100,85,60,0.11); }
+    border-bottom:1px solid rgba(100,85,60,0.11);
+  }
   .tip-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
   .tip-en { font-family:'DM Serif Display',serif; font-size:17px; font-weight:400; color:var(--ink); }
   .tip-ko { font-size:11px; color:var(--ink3); font-weight:300; margin-top:2px; }
@@ -184,7 +226,7 @@
   .ch-v { background:#3e8a5e; }
   .ch-s { background:#2a6090; }
 
-  /* LEGEND */
+  /* ── LEGEND ── */
   .legend { display:flex; gap:20px; justify-content:center;
     margin-top:20px; flex-wrap:wrap; }
   .leg-item { display:flex; align-items:center; gap:7px;
@@ -195,6 +237,88 @@
     font-size:10.5px; color:var(--ink3); font-weight:300;
     letter-spacing:0.03em; opacity:0.75; }
   .footnote strong { font-weight:600; color:var(--accent); }
+
+  /* ══════════════════════════════════════
+     MOBILE RESPONSIVE  (≤ 600px)
+  ══════════════════════════════════════ */
+  @media (max-width: 600px) {
+    .page { padding:28px 12px 48px; }
+
+    /* Header */
+    .eyebrow { font-size:9px; letter-spacing:0.22em; }
+    h1 { font-size:22px; }
+    .sub { font-size:11px; display:none; }
+    .mobile-hint {
+      display:block;
+      font-size:11px; color:var(--ink3); font-weight:300;
+      margin-top:6px; letter-spacing:0.02em;
+    }
+    .rule-line { margin-top:12px; }
+    .header { margin-bottom:24px; }
+
+    /* Grid: shrink Y-axis column */
+    .map-outer {
+      grid-template-columns: 36px 1fr 38px;
+    }
+
+    /* Y-axis left label */
+    .y-axis-left { padding:12px 0; }
+    .y-lbl { font-size:7.5px; letter-spacing:0.1em; }
+    .y-lbl-ctr { font-size:8.5px; }
+
+    /* X-axis top */
+    .x-axis-top { font-size:7.5px; letter-spacing:0.08em; padding:0 0 5px; }
+    .x-axis-top .ctr { font-size:9px; }
+    .x-axis-top span:first-child,
+    .x-axis-top span:last-child { display:none; } /* hide left/right arrows, keep center */
+
+    /* Chart: taller aspect ratio on portrait */
+    .chart { padding-bottom:88%; }
+
+    /* Quadrant labels */
+    .ql { font-size:7.5px; letter-spacing:0.06em; }
+    .ql-TL { top:8px; left:8px; }
+    .ql-TR { top:8px; right:8px; }
+    .ql-BL { bottom:8px; left:8px; }
+    .ql-BR { bottom:8px; right:8px; }
+
+    /* X ticks */
+    .x-ticks { font-size:8px; }
+
+    /* Y ticks */
+    .y-ticks-right { font-size:8px; padding-left:6px; }
+
+    /* Bubbles: ensure min 44px touch target */
+    .bubble { min-width:44px; min-height:44px; }
+    .b-name { font-size:7.5px; }
+    .b-ko   { font-size:6.5px; }
+
+    /* Legend: smaller */
+    .legend { gap:12px; margin-top:16px; }
+    .leg-item { font-size:10px; gap:5px; }
+    .leg-dot { width:9px; height:9px; }
+
+    /* Footnote */
+    .footnote { font-size:9.5px; margin-top:18px; }
+
+    /* Desktop tooltip hidden on mobile */
+    .tip { display:none !important; }
+  }
+
+  /* ══════════════════════════════════════
+     TABLET  (601px – 900px)
+  ══════════════════════════════════════ */
+  @media (min-width:601px) and (max-width:900px) {
+    .page { padding:32px 24px 48px; }
+    h1 { font-size:28px; }
+    .sub { font-size:11.5px; }
+    .map-outer { grid-template-columns: 44px 1fr 46px; }
+    .y-lbl { font-size:8.5px; }
+    .x-axis-top { font-size:8.5px; }
+    .ql { font-size:9px; }
+    .x-ticks { font-size:8.5px; }
+    .y-ticks-right { font-size:8.5px; }
+  }
 </style>
 </head>
 <body>
@@ -203,25 +327,23 @@
     <div class="eyebrow">Brand Intelligence · 2026</div>
     <h1>K 키즈 패션 <em>포지셔닝맵</em></h1>
     <div class="sub">핵심 타겟 연령대 (X축) × 스테디셀러 가격대 (Y축) · 버블에 마우스를 올려 상세 정보 확인</div>
+    <div class="mobile-hint">💡 버블을 탭하면 브랜드 정보를 볼 수 있어요</div>
     <div class="rule-line"></div>
   </div>
 
   <div class="map-outer">
-    <!-- Y axis left -->
     <div class="y-axis-left">
       <span class="y-lbl">고가·럭셔리 (10만원+)</span>
       <span class="y-lbl-ctr">스테디셀러 가격대</span>
       <span class="y-lbl">가성비·실용 (~3만원)</span>
     </div>
 
-    <!-- X axis top -->
     <div class="x-axis-top">
       <span>← 영아·베이비 (0~2세)</span>
       <span class="ctr">핵심 연령대</span>
       <span>아동·주니어 (7~12세) →</span>
     </div>
 
-    <!-- Chart -->
     <div class="chart" id="chart">
       <div class="qs qs-TL"></div><div class="qs qs-TR"></div>
       <div class="qs qs-BL"></div><div class="qs qs-BR"></div>
@@ -232,12 +354,10 @@
       <div class="ql ql-BR">가성비<br>키즈</div>
     </div>
 
-    <!-- X ticks -->
     <div class="x-ticks">
       <span>0~2세</span><span>2~4세</span><span>4~7세</span><span>7~10세</span><span>10~12세</span>
     </div>
 
-    <!-- Y ticks right -->
     <div class="y-ticks-right">
       <span>10만원~</span>
       <span>5~9만원</span>
@@ -252,23 +372,19 @@
   </div>
 </div>
 
+<!-- Desktop tooltip -->
 <div class="tip" id="tip"></div>
 
+<!-- Mobile bottom sheet -->
+<div class="sheet-overlay" id="overlay"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <button class="sheet-close" id="sheetClose">✕</button>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
 <script>
-/*
-  좌표 규칙
-  ─────────────────────────────────────────────────────
-  px  (price-x)  : 0=좌(저가) ~ 100=우(고가)
-  ay  (age-y)    : 0=하단(영아·베이비) ~ 100=상단(아동·주니어)
-
-  CSS 변환
-    left = px%
-    top  = (100 - ay)%   →  ay 낮을수록(영아) top%이 높아져 하단에 배치 ✓
-                            ay 높을수록(키즈) top%이 낮아져 상단에 배치 ✓
-*/
-
 const brands = [
-
   /* ━━━ 좌하단 : 가성비 × 베이비 ━━━ */
   {
     id:'bebejoo', name:'Bebe Joo', ko:'베베쥬',
@@ -303,7 +419,6 @@ const brands = [
     viral:['인스타그램','YouTube','맘블로그'],
     sell:['자사몰(글로벌)','스마트스토어'],
   },
-
   /* ━━━ 좌중간 : 가성비 × 유아 ━━━ */
   {
     id:'dailybebe', name:'Daily Bebe', ko:'데일리베베',
@@ -316,7 +431,6 @@ const brands = [
     viral:['맘카페','네이버 검색'],
     sell:['스마트스토어','쿠팡'],
   },
-
   /* ━━━ 중앙 : 중가 × 베이비~유아 ━━━ */
   {
     id:'laughing', name:'Laughing Child', ko:'래핑차일드',
@@ -362,7 +476,6 @@ const brands = [
     viral:['인스타그램','맘블로그'],
     sell:['자사몰','스마트스토어','인스타그램 쇼핑'],
   },
-
   /* ━━━ 중상 : 중상가 × 아동 ━━━ */
   {
     id:'bluedog', name:'Blue Dog', ko:'블루독',
@@ -375,7 +488,6 @@ const brands = [
     viral:['인스타그램','오프라인 아울렛'],
     sell:['백화점','룩스루','오프라인 아울렛'],
   },
-
   /* ━━━ 우하단 : 프리미엄 × 베이비 ━━━ */
   {
     id:'bebelemang', name:'Bébé le Mang', ko:'베베르망',
@@ -399,9 +511,7 @@ const brands = [
     viral:['인스타그램','프리미엄 편집숍 SNS'],
     sell:['룩스루','편집숍'],
   },
-
   /* ━━━ 우중 : 프리미엄 × 유아~아동 ━━━ */
-
   {
     id:'bobochoses', name:'Bobo Choses', ko:'보보쇼즈',
     color:'#D4855A', px:80, ay:55, size:62,
@@ -435,7 +545,6 @@ const brands = [
     viral:['인스타그램','맘 패션 블로그'],
     sell:['파스텔몰','갤러리아','편집숍'],
   },
-
   /* ━━━ 우상단 : 럭셔리 × 아동 ━━━ */
   {
     id:'tao', name:'T·A·O', ko:'타오',
@@ -450,16 +559,37 @@ const brands = [
   },
 ];
 
+/* ── 버블 공통 HTML 생성 ── */
+function tipHTML(b) {
+  return `
+    <div class="tip-hd">
+      <div class="tip-dot" style="background:${b.color}"></div>
+      <div><div class="tip-en">${b.name}</div><div class="tip-ko">${b.ko}</div></div>
+    </div>
+    <div class="tip-row"><span class="tip-lbl">스테디셀러</span><span class="tip-val">${b.steady}</span></div>
+    <div class="tip-row"><span class="tip-lbl">카테고리</span><span class="tip-val">${b.category}</span></div>
+    <div class="tip-row"><span class="tip-lbl">가격대</span><span class="tip-val">${b.price}</span></div>
+    <div class="tip-row"><span class="tip-lbl">핵심 연령</span><span class="tip-val">${b.age}</span></div>
+    <div class="tip-tags">${b.concept.map(t=>`<span class="tip-tag">${t}</span>`).join('')}</div>
+    <div class="tip-chs">
+      ${b.viral.map(v=>`<span class="tip-ch ch-v">📢 ${v}</span>`).join('')}
+      ${b.sell.map(s=>`<span class="tip-ch ch-s">🛍 ${s}</span>`).join('')}
+    </div>`;
+}
+
 /* ── 버블 주입 ── */
-const chart = document.getElementById('chart');
-const tip   = document.getElementById('tip');
+const chart    = document.getElementById('chart');
+const tip      = document.getElementById('tip');
+const overlay  = document.getElementById('overlay');
+const sheet    = document.getElementById('sheet');
+const sheetBody= document.getElementById('sheetBody');
+const sheetClose = document.getElementById('sheetClose');
+
+const isMobile = () => window.innerWidth <= 600;
 
 brands.forEach(b => {
   const el = document.createElement('div');
   el.className = 'bubble';
-  // 새 축 기준
-  // left = ay% → 연령 (0=좌/베이비, 100=우/키즈)
-  // top  = (100 - px)% → 가격 (px높을수록=고가=상단=작은 top%)
   el.style.cssText = `
     left:${b.ay}%;
     top:${100 - b.px}%;
@@ -469,11 +599,73 @@ brands.forEach(b => {
     transform:translate(-50%,-50%);
   `;
   el.innerHTML = `<span class="b-name">${b.name}</span><span class="b-ko">${b.ko}</span>`;
-  el.addEventListener('mouseenter', e => showTip(e, b));
-  el.addEventListener('mousemove',  e => moveTip(e));
-  el.addEventListener('mouseleave', () => { tip.style.display='none'; });
+
+  /* Desktop: hover */
+  el.addEventListener('mouseenter', e => {
+    if (isMobile()) return;
+    tip.innerHTML = tipHTML(b);
+    tip.style.display = 'block';
+    moveTip(e);
+  });
+  el.addEventListener('mousemove', e => {
+    if (!isMobile()) moveTip(e);
+  });
+  el.addEventListener('mouseleave', () => {
+    if (!isMobile()) tip.style.display = 'none';
+  });
+
+  /* Mobile: tap → bottom sheet */
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    openSheet(b, el);
+  }, { passive: false });
+
+  /* Also support click for mobile browsers that don't fire touchstart well */
+  el.addEventListener('click', e => {
+    if (!isMobile()) return;
+    e.stopPropagation();
+    openSheet(b, el);
+  });
+
   chart.appendChild(el);
 });
+
+/* ── Bottom sheet controls ── */
+function openSheet(b, activeEl) {
+  // clear previous active
+  document.querySelectorAll('.bubble.active').forEach(el => el.classList.remove('active'));
+  activeEl.classList.add('active');
+
+  sheetBody.innerHTML = tipHTML(b);
+  overlay.style.display = 'block';
+  sheet.classList.add('open');
+}
+function closeSheet() {
+  sheet.classList.remove('open');
+  overlay.style.display = 'none';
+  document.querySelectorAll('.bubble.active').forEach(el => el.classList.remove('active'));
+}
+sheetClose.addEventListener('click', closeSheet);
+overlay.addEventListener('click', closeSheet);
+
+/* Swipe down to close */
+let touchStartY = 0;
+sheet.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive:true });
+sheet.addEventListener('touchend', e => {
+  const diff = e.changedTouches[0].clientY - touchStartY;
+  if (diff > 60) closeSheet();
+}, { passive:true });
+
+/* ── Desktop tooltip position ── */
+function moveTip(e) {
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = e.clientX + 18, y = e.clientY + 18;
+  if (x + tw > window.innerWidth  - 16) x = e.clientX - tw - 18;
+  if (y + th > window.innerHeight - 16) y = e.clientY - th - 18;
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+}
 
 /* ── 레전드 ── */
 const legDefs = [
@@ -488,33 +680,6 @@ legDefs.forEach(d => {
   legEl.innerHTML += `<div class="leg-item">
     <div class="leg-dot" style="background:${d.color}"></div><span>${d.label}</span></div>`;
 });
-
-/* ── 툴팁 ── */
-function showTip(e, b) {
-  tip.innerHTML = `
-    <div class="tip-hd">
-      <div class="tip-dot" style="background:${b.color}"></div>
-      <div><div class="tip-en">${b.name}</div><div class="tip-ko">${b.ko}</div></div>
-    </div>
-    <div class="tip-row"><span class="tip-lbl">스테디셀러</span><span class="tip-val">${b.steady}</span></div>
-    <div class="tip-row"><span class="tip-lbl">카테고리</span><span class="tip-val">${b.category}</span></div>
-    <div class="tip-row"><span class="tip-lbl">가격대</span><span class="tip-val">${b.price}</span></div>
-    <div class="tip-row"><span class="tip-lbl">핵심 연령</span><span class="tip-val">${b.age}</span></div>
-    <div class="tip-tags">${b.concept.map(t=>`<span class="tip-tag">${t}</span>`).join('')}</div>
-    <div class="tip-chs">
-      ${b.viral.map(v=>`<span class="tip-ch ch-v">📢 ${v}</span>`).join('')}
-      ${b.sell.map(s=>`<span class="tip-ch ch-s">🛍 ${s}</span>`).join('')}
-    </div>`;
-  tip.style.display = 'block';
-  moveTip(e);
-}
-function moveTip(e) {
-  const tw=tip.offsetWidth, th=tip.offsetHeight;
-  let x=e.clientX+18, y=e.clientY+18;
-  if (x+tw > window.innerWidth-16)  x = e.clientX-tw-18;
-  if (y+th > window.innerHeight-16) y = e.clientY-th-18;
-  tip.style.left=x+'px'; tip.style.top=y+'px';
-}
 </script>
 </body>
 </html>
